@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.parse
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "hyprpuccin" / "weather.json"
+CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "hyprpuccin" / "weather.json"
+
+
+def load_location():
+    location = {"city": "Город", "latitude": None, "longitude": None, "timezone": "auto"}
+    try:
+        saved = json.loads(CONFIG.read_text(encoding="utf-8"))
+        for key in location:
+            if key in saved:
+                location[key] = saved[key]
+    except (OSError, ValueError, json.JSONDecodeError):
+        pass
+    return location
+
+
+LOCATION = load_location()
+CITY = str(LOCATION["city"])
+
+
+def weather_url():
+    if LOCATION["latitude"] is None or LOCATION["longitude"] is None:
+        raise RuntimeError(f"weather location is not configured in {CONFIG}")
+    parameters = {
+        "latitude": LOCATION["latitude"],
+        "longitude": LOCATION["longitude"],
+        "current": "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        "timezone": LOCATION["timezone"],
+        "forecast_days": 3,
+    }
+    return "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(parameters)
+
+ICONS = {
+    0: "󰖙", 1: "󰖕", 2: "󰖕", 3: "󰖐", 45: "󰖑", 48: "󰖑",
+    51: "󰖗", 53: "󰖗", 55: "󰖗", 56: "󰖗", 57: "󰖗",
+    61: "󰖗", 63: "󰖗", 65: "󰖗", 66: "󰖗", 67: "󰖗",
+    71: "󰖘", 73: "󰖘", 75: "󰖘", 77: "󰖘",
+    80: "󰖖", 81: "󰖖", 82: "󰖖", 85: "󰼶", 86: "󰼶",
+    95: "󰙾", 96: "󰙾", 99: "󰙾",
+}
+DESCRIPTIONS = {
+    0: "Ясно", 1: "Преимущественно ясно", 2: "Переменная облачность", 3: "Облачно",
+    45: "Туман", 48: "Изморозь", 51: "Лёгкая морось", 53: "Морось", 55: "Сильная морось",
+    56: "Ледяная морось", 57: "Сильная ледяная морось", 61: "Небольшой дождь",
+    63: "Дождь", 65: "Сильный дождь", 66: "Ледяной дождь", 67: "Сильный ледяной дождь",
+    71: "Небольшой снег", 73: "Снег", 75: "Сильный снег", 77: "Снежные зёрна",
+    80: "Небольшой ливень", 81: "Ливень", 82: "Сильный ливень",
+    85: "Снежный заряд", 86: "Сильный снежный заряд", 95: "Гроза",
+    96: "Гроза с градом", 99: "Сильная гроза с градом",
+}
+WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+
+
+def update_cache():
+    request = urllib.request.Request(weather_url(), headers={"User-Agent": "Hyprpuccin weather widget"})
+    with urllib.request.urlopen(request, timeout=6) as response:
+        data = json.load(response)
+    if "current" not in data or "daily" not in data:
+        raise ValueError("weather response is incomplete")
+    CACHE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = CACHE.with_name(f"{CACHE.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporary, CACHE)
+    return data
+
+
+def load_weather():
+    data = None
+    try:
+        data = json.loads(CACHE.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        pass
+
+    stale = not CACHE.exists() or time.time() - CACHE.stat().st_mtime > 900
+    if stale and data is not None:
+        subprocess.Popen(
+            [sys.executable, __file__, "update"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    elif data is None:
+        try:
+            data = update_cache()
+        except Exception:
+            data = None
+    return data
+
+
+def signed(value):
+    return f"{round(float(value)):+d}°"
+
+
+def condition(code):
+    code = int(code)
+    return ICONS.get(code, "󰖐"), DESCRIPTIONS.get(code, "Погода")
+
+
+def forecast_lines(data):
+    daily = data["daily"]
+    lines = []
+    for index, date_string in enumerate(daily["time"][:3]):
+        date = datetime.fromisoformat(date_string)
+        day = "Сегодня" if index == 0 else ("Завтра" if index == 1 else WEEKDAYS[date.weekday()])
+        icon, _ = condition(daily["weather_code"][index])
+        low = round(float(daily["temperature_2m_min"][index]))
+        high = round(float(daily["temperature_2m_max"][index]))
+        rain = int(daily["precipitation_probability_max"][index])
+        lines.append(f"{day}: {icon} {low:+d}…{high:+d}°  осадки {rain}%")
+    return lines
+
+
+def output(mode, data):
+    if data is None:
+        if mode in ("panel", "desktop"):
+            print(json.dumps({"text": f"{CITY}  --°", "tooltip": "Нет данных о погоде", "class": "offline"}, ensure_ascii=False))
+        else:
+            print(f"{CITY} · погода недоступна")
+        return
+
+    current = data["current"]
+    icon, description = condition(current["weather_code"])
+    temperature = signed(current["temperature_2m"])
+    apparent = signed(current["apparent_temperature"])
+    humidity = int(current["relative_humidity_2m"])
+    wind = round(float(current["wind_speed_10m"]))
+    forecast = forecast_lines(data)
+
+    if mode == "panel":
+        tooltip = "\n".join([
+            f"{CITY} · {description}",
+            f"Температура {temperature}, ощущается как {apparent}",
+            f"Влажность {humidity}% · ветер {wind} км/ч",
+            "",
+            *forecast,
+        ])
+        print(json.dumps({"text": f"{icon}  {temperature}", "tooltip": tooltip, "class": "weather"}, ensure_ascii=False))
+    elif mode == "desktop":
+        text = (
+            f"<span size='24000' weight='bold'>{icon}  {temperature}</span>\n"
+            f"<span size='large' weight='bold'>{description}</span>\n"
+            f"{CITY} · ощущается как {apparent}\n"
+            f"Влажность {humidity}% · ветер {wind} км/ч\n\n"
+            + "\n".join(forecast)
+        )
+        print(json.dumps({"text": text, "tooltip": "Данные Open-Meteo", "class": "weather"}, ensure_ascii=False))
+    elif mode == "forecast":
+        print("\n".join(forecast))
+    else:
+        print(f"{icon}  {temperature}  {description} · {CITY}")
+
+
+if __name__ == "__main__":
+    mode = sys.argv[1] if len(sys.argv) > 1 else "panel"
+    if mode == "update":
+        try:
+            update_cache()
+        except Exception as error:
+            print(error, file=sys.stderr)
+            raise SystemExit(1)
+    else:
+        output(mode, load_weather())

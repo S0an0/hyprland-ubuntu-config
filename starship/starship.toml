@@ -1,0 +1,72 @@
+format = "$os$username$hostname$directory$git_branch$git_status$fill$cmd_duration$line_break$character"
+palette = "catppuccin_frappe"
+add_newline = true
+
+[os]
+disabled = false
+style = "bold mauve"
+
+[os.symbols]
+Ubuntu = "󰕈 "
+Linux = "󰌽 "
+
+[username]
+show_always = true
+style_user = "bold lavender"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold teal"
+format = "[@$hostname ]($style)"
+
+[directory]
+style = "bold blue"
+truncation_length = 4
+truncate_to_repo = false
+format = "[$path ]($style)"
+
+[git_branch]
+symbol = " "
+style = "bold mauve"
+format = "[$symbol$branch ]($style)"
+
+[git_status]
+style = "bold peach"
+format = "[$all_status$ahead_behind ]($style)"
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 1500
+style = "yellow"
+format = "[󰔟 $duration ]($style)"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[palettes.catppuccin_frappe]
+rosewater = "#f2d5cf"
+flamingo = "#eebebe"
+pink = "#f4b8e4"
+mauve = "#ca9ee6"
+red = "#e78284"
+maroon = "#ea999c"
+peach = "#ef9f76"
+yellow = "#e5c890"
+green = "#a6d189"
+teal = "#81c8be"
+sky = "#99d1db"
+sapphire = "#85c1dc"
+blue = "#8caaee"
+lavender = "#babbf1"
+text = "#c6d0f5"
+subtext1 = "#b5bfe2"
+overlay1 = "#838ba7"
+surface1 = "#51576d"
+base = "#303446"
+mantle = "#292c3c"
+crust = "#232634"

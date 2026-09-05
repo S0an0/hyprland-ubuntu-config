@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+choice=$(printf '󰖔  Frappe — тёмная\n󰖨  Latte — светлая\n' \
+  | rofi -dmenu -i -p 'Цветовая тема') || exit 0
+case "$choice" in
+  *Frappe*) exec "$HOME/.local/bin/hypr-theme" frappe ;;
+  *Latte*) exec "$HOME/.local/bin/hypr-theme" latte ;;
+esac

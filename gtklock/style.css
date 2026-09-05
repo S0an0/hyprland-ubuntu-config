@@ -1,0 +1,96 @@
+window {
+  background-color: #191724;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #c6d0f5;
+  font-family: "JetBrainsMono Nerd Font", sans-serif;
+}
+
+#window-box {
+  min-width: 590px;
+  padding: 26px 34px;
+  background-color: rgba(48, 52, 70, 0.86);
+  border: 1px solid rgba(186, 187, 241, 0.62);
+  border-radius: 26px;
+  box-shadow: 0 12px 42px rgba(17, 17, 27, 0.66);
+}
+
+#clock-label,
+window.focused:not(.hidden) #clock-label {
+  color: #babbf1;
+  font-size: 72pt;
+  font-weight: 700;
+  margin: 0;
+}
+
+#date-label,
+window.focused:not(.hidden) #date-label {
+  color: #b5bfe2;
+  font-size: 18pt;
+  margin-bottom: 8px;
+}
+
+#weather-label {
+  color: #81c8be;
+  font-size: 18pt;
+  font-weight: 700;
+}
+
+#forecast-label {
+  color: #b5bfe2;
+  font-size: 11pt;
+  margin-bottom: 8px;
+}
+
+#body-grid {
+  margin: 6px 0;
+}
+
+#input-label {
+  color: #c6d0f5;
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+#input-field {
+  min-height: 46px;
+  padding: 2px 14px;
+  color: #c6d0f5;
+  background-color: rgba(35, 38, 52, 0.92);
+  border: 2px solid #ca9ee6;
+  border-radius: 14px;
+  caret-color: #ca9ee6;
+}
+
+#input-field:focus {
+  border-color: #8caaee;
+  box-shadow: 0 0 0 2px rgba(140, 170, 238, 0.24);
+}
+
+#unlock-button {
+  min-height: 38px;
+  padding: 0 18px;
+  color: #303446;
+  background: #ca9ee6;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+#error-label { color: #e78284; font-weight: 700; }
+#warning-label { color: #e5c890; }
+
+#calendar {
+  min-width: 370px;
+  padding: 8px 14px;
+  color: #c6d0f5;
+  background: rgba(35, 38, 52, 0.56);
+  border-radius: 16px;
+}
+
+#calendar:selected {
+  color: #303446;
+  background: #ca9ee6;
+  border-radius: 8px;
+}

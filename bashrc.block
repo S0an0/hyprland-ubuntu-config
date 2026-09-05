@@ -1,0 +1,8 @@
+# Hyprpuccin terminal integration
+if [[ $- == *i* ]] && [[ -n "${HYPRPUCCIN_TERMINAL:-}" ]]; then
+    eval "$(starship init bash)"
+    if [[ -z "${HYPRPUCCIN_GREETING_SHOWN:-}" ]]; then
+        export HYPRPUCCIN_GREETING_SHOWN=1
+        fastfetch --logo none
+    fi
+fi

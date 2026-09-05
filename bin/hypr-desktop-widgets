@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Show desktop Waybar widgets only while the active workspace is empty."""
+
+from __future__ import annotations
+
+import fcntl
+import json
+import os
+from pathlib import Path
+import signal
+import socket
+import subprocess
+import sys
+import time
+
+
+HOME = Path.home()
+RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+SIGNATURE = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "")
+SOCKET_PATH = RUNTIME_DIR / "hypr" / SIGNATURE / ".socket2.sock"
+LOCK_PATH = RUNTIME_DIR / "hypr-desktop-widgets.lock"
+WAYBAR_COMMAND = [
+    "waybar",
+    "-c",
+    str(HOME / ".config/waybar/desktop-config.jsonc"),
+    "-s",
+    str(HOME / ".config/waybar/desktop-style.css"),
+]
+
+widget_process: subprocess.Popen[bytes] | None = None
+stopping = False
+
+
+def hypr_json(command: str) -> object:
+    output = subprocess.check_output(
+        ["hyprctl", command, "-j"],
+        stderr=subprocess.DEVNULL,
+        timeout=2,
+    )
+    return json.loads(output)
+
+
+def active_workspace_has_window() -> bool:
+    try:
+        workspace = hypr_json("activeworkspace")
+        if not isinstance(workspace, dict):
+            return True
+        if int(workspace.get("windows", 0)) > 0:
+            return True
+
+        active_monitor = workspace.get("monitor")
+        monitors = hypr_json("monitors")
+        if isinstance(monitors, list):
+            for monitor in monitors:
+                if not isinstance(monitor, dict) or monitor.get("name") != active_monitor:
+                    continue
+                special = monitor.get("specialWorkspace", {})
+                return isinstance(special, dict) and int(special.get("id", 0)) != 0
+        return False
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError):
+        # If Hyprland cannot be queried, avoid showing stale desktop widgets.
+        return True
+
+
+def show_widgets() -> None:
+    global widget_process
+    if widget_process is not None and widget_process.poll() is None:
+        return
+    widget_process = subprocess.Popen(
+        WAYBAR_COMMAND,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def hide_widgets() -> None:
+    global widget_process
+    if widget_process is None:
+        return
+    if widget_process.poll() is None:
+        widget_process.terminate()
+        try:
+            widget_process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            widget_process.kill()
+            widget_process.wait(timeout=2)
+    widget_process = None
+
+
+def refresh() -> None:
+    if active_workspace_has_window():
+        hide_widgets()
+    else:
+        show_widgets()
+
+
+def stop(_signum: int, _frame: object) -> None:
+    global stopping
+    stopping = True
+
+
+def main() -> int:
+    if not SIGNATURE:
+        return 1
+
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = LOCK_PATH.open("w")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return 0
+
+    signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGTERM, stop)
+
+    while not stopping:
+        refresh()
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as event_socket:
+                event_socket.settimeout(1)
+                event_socket.connect(str(SOCKET_PATH))
+                pending = b""
+                while not stopping:
+                    try:
+                        chunk = event_socket.recv(8192)
+                    except socket.timeout:
+                        continue
+                    if not chunk:
+                        break
+                    pending += chunk
+                    lines = pending.split(b"\n")
+                    pending = lines.pop()
+                    if lines:
+                        time.sleep(0.04)
+                        refresh()
+        except OSError:
+            time.sleep(1)
+
+    hide_widgets()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

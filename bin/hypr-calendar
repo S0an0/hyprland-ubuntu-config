@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+import calendar
+import json
+import sys
+from datetime import date
+
+MONTHS = [
+    "", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+]
+
+
+def make_calendar():
+    today = date.today()
+    weeks = calendar.Calendar(firstweekday=calendar.MONDAY).monthdayscalendar(today.year, today.month)
+    rows = ["Пн  Вт  Ср  Чт  Пт  Сб  Вс"]
+    for week in weeks:
+        cells = []
+        for day in week:
+            if day == 0:
+                cells.append("  ")
+            elif day == today.day:
+                cells.append(f"<span foreground='#ca9ee6' weight='bold'>{day:02d}</span>")
+            else:
+                cells.append(f"{day:02d}")
+        rows.append("  ".join(cells))
+    return f"<span size='large' weight='bold'>{MONTHS[today.month]} {today.year}</span>\n<tt>" + "\n".join(rows) + "</tt>"
+
+
+text = make_calendar()
+if len(sys.argv) > 1 and sys.argv[1] == "lock":
+    print(text)
+else:
+    print(json.dumps({"text": text, "tooltip": "Текущий месяц", "class": "calendar"}, ensure_ascii=False))

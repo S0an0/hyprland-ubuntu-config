@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="${HYPR_BACKUP_DIR:-$HOME/.local/share/hyprland-config-backup}"
+
+if [[ -d "$repo_dir/.git" ]]; then
+  git -C "$repo_dir" pull --ff-only || printf 'Warning: using the local copy because pull failed.\n' >&2
+else
+  command -v gh >/dev/null 2>&1 || {
+    printf 'Install GitHub CLI first: sudo apt install gh\n' >&2
+    exit 1
+  }
+  account="$(gh api user --jq .login)"
+  mkdir -p "$(dirname "$repo_dir")"
+  gh repo clone "$account/hyprland-ubuntu-config" "$repo_dir"
+fi
+
+exec "$repo_dir/backup.sh" "$@"

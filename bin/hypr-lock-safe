@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -u
+
+if pgrep -x hyprlock >/dev/null 2>&1 || pgrep -x gtklock >/dev/null 2>&1; then
+    exit 0
+fi
+
+rescue_config="$HOME/.config/hypr/hyprlock-rescue.conf"
+log_file="${XDG_CACHE_HOME:-$HOME/.cache}/hyprpuccin/lockscreen.log"
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+layout="$runtime_dir/gtklock-layout.xml"
+style="$HOME/.config/gtklock/style.css"
+
+mkdir -p "$(dirname "$log_file")"
+printf '\n%(%F %T)T starting gtklock\n' -1 >> "$log_file"
+
+"$HOME/.local/bin/hypr-gtklock-layout" "$layout"
+
+wallpaper="$HOME/Изображения/Wallpapers/deep-morning-minimal.jpg"
+current_file="${XDG_CACHE_HOME:-$HOME/.cache}/hyprpuccin/wallpaper-current"
+if [[ -r "$current_file" ]]; then
+    IFS= read -r current_wallpaper < "$current_file"
+    [[ -f "$current_wallpaper" ]] && wallpaper="$current_wallpaper"
+fi
+
+LC_TIME=ru_RU.UTF-8 gtklock \
+    --gtk-theme Adwaita \
+    --layout "$layout" \
+    --style "$style" \
+    --background "$wallpaper" \
+    --time-format "%H:%M" \
+    --date-format "%A, %d %B" \
+    --follow-focus >> "$log_file" 2>&1
+status=$?
+if (( status == 0 )); then
+    exit 0
+fi
+
+printf '%(%F %T)T gtklock exited with status %d; starting rescue lock\n' -1 "$status" >> "$log_file"
+
+hyprctl keyword misc:allow_session_lock_restore 1 >/dev/null 2>&1 || true
+sleep 0.2
+exec hyprlock --config "$rescue_config" --immediate-render --no-fade-in

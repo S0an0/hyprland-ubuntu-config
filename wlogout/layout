@@ -1,0 +1,30 @@
+{
+    "label" : "lock",
+    "action" : "sh -c '$HOME/.local/bin/hypr-lock-safe'",
+    "text" : "Блокировка",
+    "keybind" : "l"
+}
+{
+    "label" : "logout",
+    "action" : "sh -c '$HOME/.local/bin/hypr-session-exit'",
+    "text" : "Выйти",
+    "keybind" : "e"
+}
+{
+    "label" : "suspend",
+    "action" : "systemctl suspend",
+    "text" : "Сон",
+    "keybind" : "s"
+}
+{
+    "label" : "reboot",
+    "action" : "systemctl reboot",
+    "text" : "Перезагрузка",
+    "keybind" : "r"
+}
+{
+    "label" : "shutdown",
+    "action" : "systemctl poweroff",
+    "text" : "Выключение",
+    "keybind" : "p"
+}

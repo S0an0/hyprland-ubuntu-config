@@ -1,0 +1,18 @@
+configuration {
+    modi: "drun,run,window";
+    show-icons: true;
+    display-drun: "Приложения";
+    display-run: "Команда";
+    display-window: "Окна";
+    drun-display-format: "{name}";
+    icon-theme: "Papirus-Dark";
+    application-fallback-icon: "application-x-executable";
+    font: "JetBrainsMono Nerd Font 12";
+    terminal: "alacritty";
+    matching: "fuzzy";
+    sort: true;
+    disable-history: false;
+    click-to-exit: true;
+}
+
+@theme "theme.rasi"

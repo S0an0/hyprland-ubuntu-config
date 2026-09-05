@@ -1,0 +1,87 @@
+@import "theme.rasi"
+
+window {
+    width: 56%;
+    padding: 22px;
+}
+
+mainbox {
+    children: [inputbar, listview, mode-switcher];
+    spacing: 16px;
+}
+
+inputbar {
+    padding: 15px 18px;
+}
+
+prompt {
+    str: "󰍉";
+    font: "JetBrainsMono Nerd Font 15";
+    padding: 0 7px 0 0;
+}
+
+entry {
+    placeholder: "Найти приложение…";
+}
+
+listview {
+    lines: 3;
+    columns: 4;
+    fixed-height: true;
+    fixed-columns: true;
+    flow: horizontal;
+    spacing: 11px;
+}
+
+element {
+    orientation: vertical;
+    spacing: 9px;
+    padding: 15px 8px 12px;
+    border: 1px;
+    border-color: @surface-hover;
+    border-radius: 15px;
+    background-color: @surface;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: @surface;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: @accent;
+    border-color: @accent;
+    text-color: @selection-fg;
+}
+
+element-icon {
+    size: 52px;
+    margin: 0;
+    horizontal-align: 0.5;
+    background-color: transparent;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    background-color: transparent;
+    text-color: inherit;
+}
+
+mode-switcher {
+    spacing: 9px;
+    background-color: transparent;
+}
+
+button {
+    padding: 9px 14px;
+    border-radius: 11px;
+    background-color: @surface;
+    text-color: @muted;
+}
+
+button selected {
+    background-color: @accent-alt;
+    text-color: @selection-fg;
+}

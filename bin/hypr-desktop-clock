@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+import json
+from datetime import datetime
+
+WEEKDAYS = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+MONTHS = [
+    "", "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+]
+
+now = datetime.now()
+text = (
+    f"<span size='48000' weight='bold'>{now:%H:%M}</span>\n"
+    f"<span size='large'>{WEEKDAYS[now.weekday()]}, {now.day:02d} {MONTHS[now.month]}</span>"
+)
+print(json.dumps({"text": text, "class": "clock"}, ensure_ascii=False))

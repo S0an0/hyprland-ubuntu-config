@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pictures_dir="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+if [[ -z "$pictures_dir" || "$pictures_dir" == "$HOME" ]]; then
+    pictures_dir="$HOME/Pictures"
+fi
+
+wallpaper_dir="${HYPR_WALLPAPER_DIR:-$pictures_dir/Wallpapers}"
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprpuccin"
+current_file="$cache_dir/wallpaper-current"
+
+mapfile -d '' wallpapers < <(
+    find "$wallpaper_dir" -maxdepth 1 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+        -print0 | sort -z
+)
+
+if (( ${#wallpapers[@]} == 0 )); then
+    notify-send -u critical "Обои" "В папке $wallpaper_dir нет изображений"
+    exit 1
+fi
+
+mkdir -p "$cache_dir"
+current=""
+[[ -r "$current_file" ]] && IFS= read -r current < "$current_file"
+
+next="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
+if (( ${#wallpapers[@]} > 1 )); then
+    while [[ "$next" == "$current" ]]; do
+        next="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
+    done
+fi
+
+if ! swww query >/dev/null 2>&1; then
+    swww-daemon >/dev/null 2>&1 &
+    for _ in {1..30}; do
+        swww query >/dev/null 2>&1 && break
+        sleep 0.1
+    done
+fi
+
+transitions=(grow outer center wipe wave left right top bottom fade)
+transition="${transitions[RANDOM % ${#transitions[@]}]}"
+args=(
+    img "$next"
+    --resize crop
+    --transition-type "$transition"
+    --transition-duration 1.8
+    --transition-fps 60
+)
+
+case "$transition" in
+    grow|outer)
+        cursor_position="$(hyprctl cursorpos 2>/dev/null | tr -d ' ' || true)"
+        [[ "$cursor_position" =~ ^[0-9]+,[0-9]+$ ]] || cursor_position="center"
+        args+=(--transition-pos "$cursor_position" --invert-y)
+        ;;
+    wipe|wave)
+        angles=(0 30 45 90 135 180 225 270 315)
+        args+=(--transition-angle "${angles[RANDOM % ${#angles[@]}]}")
+        ;;
+esac
+
+swww "${args[@]}"
+printf '%s\n' "$next" > "$current_file"
+
+if [[ "${1:-}" == "--notify" ]]; then
+    notify-send -a "Обои" "Обои изменены" "$(basename "$next") · эффект: $transition"
+fi

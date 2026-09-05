@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+applications_dir="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+override_file="$applications_dir/code_code.desktop"
+deb_entry="/usr/share/applications/code.desktop"
+snap_entry="/var/lib/snapd/desktop/applications/code_code.desktop"
+managed_marker="X-Hyprland-Managed=true"
+
+if [[ -f "$deb_entry" && -f "$snap_entry" ]]; then
+  mkdir -p "$applications_dir"
+  temporary_file=$(mktemp "$applications_dir/.code_code.desktop.XXXXXX")
+  printf '%s\n' \
+    '[Desktop Entry]' \
+    'Type=Application' \
+    'Name=Visual Studio Code (duplicate Snap launcher)' \
+    'Hidden=true' \
+    'NoDisplay=true' \
+    "$managed_marker" > "$temporary_file"
+  chmod 0644 "$temporary_file"
+  mv -f -- "$temporary_file" "$override_file"
+elif [[ -f "$override_file" ]] \
+  && grep -Fxq "$managed_marker" "$override_file"; then
+  rm -f -- "$override_file"
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database "$applications_dir" >/dev/null 2>&1 || true
+fi

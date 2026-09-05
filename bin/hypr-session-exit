@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+"$HOME/.local/bin/hypr-restore-gnome"
+hyprctl dispatch exit

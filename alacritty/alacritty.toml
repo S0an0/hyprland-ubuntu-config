@@ -1,0 +1,29 @@
+[general]
+import = ["~/.config/alacritty/colors.toml"]
+
+[env]
+TERM = "xterm-256color"
+HYPRPUCCIN_TERMINAL = "1"
+
+[window]
+opacity = 0.88
+blur = true
+decorations = "None"
+dynamic_padding = true
+padding = { x = 16, y = 14 }
+
+[font]
+size = 11.5
+normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
+bold = { family = "JetBrainsMono Nerd Font", style = "Bold" }
+italic = { family = "JetBrainsMono Nerd Font", style = "Italic" }
+
+[cursor]
+style = { shape = "Beam", blinking = "On" }
+blink_interval = 500
+
+[selection]
+save_to_clipboard = true
+
+[scrolling]
+history = 10000

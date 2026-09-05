@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprpuccin"
+state_file="$cache_dir/theme"
+mkdir -p "$cache_dir"
+
+requested="${1:-toggle}"
+current="frappe"
+if [[ -r "$state_file" ]]; then
+  current="$(<"$state_file")"
+fi
+
+if [[ "$requested" == "toggle" ]]; then
+  if [[ "$current" == "frappe" ]]; then requested="latte"; else requested="frappe"; fi
+fi
+
+if [[ "$requested" == "apply" ]]; then
+  requested="$current"
+fi
+
+case "$requested" in
+  frappe)
+    gtk_theme="Graphite-teal-Dark-compact-nord"
+    gtk_variant="Graphite-teal-Dark-compact-nord"
+    icon_theme="Colloid-Orange-Catppuccin-Dark"
+    color_scheme="prefer-dark"
+    ;;
+  latte)
+    gtk_theme="Graphite-teal-Light-compact-nord"
+    gtk_variant="Graphite-teal-Light-compact-nord"
+    icon_theme="Colloid-Orange-Catppuccin-Light"
+    color_scheme="prefer-light"
+    ;;
+  *)
+    printf 'Usage: %s [frappe|latte|toggle|apply]\n' "$0" >&2
+    exit 2
+    ;;
+esac
+
+ln -sfn "$HOME/.config/hypr/themes/$requested.conf" "$HOME/.config/hypr/theme.conf"
+ln -sfn "$HOME/.config/waybar/themes/$requested.css" "$HOME/.config/waybar/theme.css"
+ln -sfn "$HOME/.config/rofi/themes/$requested.rasi" "$HOME/.config/rofi/theme.rasi"
+ln -sfn "$HOME/.config/alacritty/themes/$requested.toml" "$HOME/.config/alacritty/colors.toml"
+ln -sfn "$HOME/.config/mako/themes/$requested" "$HOME/.config/mako/config"
+
+mkdir -p "$HOME/.config/gtk-4.0"
+ln -sfn "$HOME/.themes/$gtk_variant/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk.css"
+ln -sfn "$HOME/.themes/$gtk_variant/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css"
+
+gsettings set org.gnome.desktop.interface color-scheme "$color_scheme" >/dev/null
+gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" >/dev/null
+gsettings set org.gnome.desktop.interface icon-theme "$icon_theme" >/dev/null
+
+printf '%s\n' "$requested" > "$state_file"
+
+if command -v hyprctl >/dev/null && hyprctl instances -j 2>/dev/null | jq -e 'length > 0' >/dev/null 2>&1; then
+  hyprctl reload >/dev/null 2>&1 || true
+  pkill -SIGUSR2 waybar 2>/dev/null || true
+  makoctl reload 2>/dev/null || true
+  notify-send "Hyprpuccin" "Включена тема $requested" 2>/dev/null || true
+fi

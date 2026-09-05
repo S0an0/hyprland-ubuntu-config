@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+interval="${HYPR_WALLPAPER_INTERVAL:-600}"
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+lock_file="$runtime_dir/hypr-wallpaper-cycle-$UID.lock"
+next_script="$HOME/.local/bin/hypr-wallpaper-next"
+
+exec 9>"$lock_file"
+flock -n 9 || exit 0
+
+"$next_script"
+while sleep "$interval"; do
+    "$next_script" || true
+done

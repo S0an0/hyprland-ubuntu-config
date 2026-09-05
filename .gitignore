@@ -1,0 +1,6 @@
+*.part
+*.log
+.DS_Store
+__pycache__/
+state/last-backup.txt
+state/package-versions.tsv

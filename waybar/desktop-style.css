@@ -1,0 +1,50 @@
+@import "theme.css";
+
+* {
+  border: none;
+  font-family: "JetBrainsMono Nerd Font", sans-serif;
+  font-size: 14px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+  color: @text;
+}
+
+.modules-center {
+  background: transparent;
+}
+
+#custom-clock,
+#custom-weather,
+#custom-calendar {
+  background: alpha(@base, 0.72);
+  border: 1px solid alpha(@lavender, 0.50);
+  border-radius: 22px;
+  box-shadow: none;
+  margin: 10px 9px;
+  padding: 18px 26px;
+}
+
+#custom-clock {
+  color: @lavender;
+  min-width: 270px;
+}
+
+#custom-weather {
+  color: @text;
+  min-width: 350px;
+}
+
+#custom-calendar {
+  color: @subtext;
+  min-width: 310px;
+}
+
+tooltip {
+  background: @base;
+  color: @text;
+  border: 1px solid @mauve;
+  border-radius: 12px;
+}

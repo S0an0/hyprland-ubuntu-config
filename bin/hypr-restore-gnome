@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+for file in "$HOME/.config/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk-dark.css"; do
+  if [[ -L "$file" ]]; then
+    target="$(readlink "$file")"
+    case "$target" in
+      "$HOME"/.themes/Graphite-*) rm -- "$file" ;;
+    esac
+  fi
+done
+
+gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+gsettings set org.gnome.desktop.interface gtk-theme Yaru-dark
+gsettings set org.gnome.desktop.interface icon-theme Yaru-dark
